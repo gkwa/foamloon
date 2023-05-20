@@ -23,7 +23,9 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Print("log: root.Run")
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -47,6 +49,7 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	myinit()
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -67,4 +70,50 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+type config struct {
+	Module struct {
+		Enabled      bool
+		moduleConfig `mapstructure:",squash"`
+	}
+}
+
+type moduleConfig struct {
+	Token string
+}
+
+var (
+	cfgFile string
+	C       config
+)
+
+func myinit() {
+	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+
+	viper.SetConfigName(".foamloon")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Printf("Error reading config file: %v\n", err)
+	}
+
+	err = viper.Unmarshal(&C)
+	if err != nil {
+		fmt.Printf("Error unmarshaling config: %v\n", err)
+	}
+
+	if C.Module.Enabled {
+		// Do something with C.Module.Token
+		fmt.Println("Module enabled. Token:", C.Module.Token)
+	} else {
+		fmt.Println("Module disabled.")
+	}
+
+	// if err := rootCmd.Execute(); err != nil {
+	// 	fmt.Println(err)
+	// }
 }
